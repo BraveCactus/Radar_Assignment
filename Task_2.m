@@ -2,12 +2,12 @@
 
 function main()
     %% Инициализация и параметры
-    clear workspace;  % Очистка рабочей области
-    close all;        % Закрытие всех графиков
-    format compact;   % Компактный вывод
+    clear all;
+    close all;       
+    format compact;   
     clc;
     
-    % Основные параметры сигнала
+    % Параметры сигнала
     sampling_rate = 10e3;       % Частота дискретизации [Гц]
     pulse_duration = 100e-3;    % Длительность импульса [сек]
     freq_start = 100;           % Начальная частота [Гц]
@@ -62,6 +62,4 @@ function main()
               'EdgeColor', 'none', 'FontSize', 14, ...
               'FontWeight', 'bold', 'HorizontalAlignment', 'center');
     
-    % Сохранение данных
-    save('lfm_signal_data.mat', 'lfm_signal', 'time_vector');
 end

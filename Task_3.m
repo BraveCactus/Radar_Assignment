@@ -2,12 +2,12 @@
 
 function main()
     %% Инициализация и параметры
-    clear workspace;  % Очистка рабочей области
-    close all;        % Закрытие всех графиков
-    format compact;   % Компактный вывод
+    clear all;
+    close all;       
+    format compact;   
     clc;
     
-    % Основные параметры модели
+    % Параметры модели
     max_distance = 100;          % Максимальная дальность [м]
     num_objects = 3;             % Количество типов объектов
     num_backgrounds = 2;         % Количество типов фона
@@ -80,6 +80,5 @@ function main()
     annotation(fig, 'textbox', [0.3 0.93 0.4 0.05], ...
               'String', 'Моделирование радиолокационных характеристик', ...
               'EdgeColor', 'none', 'FontSize', 14, ...
-              'FontWeight', 'bold', 'HorizontalAlignment', 'center');
- 
+              'FontWeight', 'bold', 'HorizontalAlignment', 'center'); 
 end

@@ -2,9 +2,10 @@
 
 function main()
     %% Инициализация среды
-    clear workspace;  % Очистка рабочей области
-    close all;        % Закрытие всех графиков
-    format compact;   % Компактный вывод
+    clear all;
+    close all;       
+    format compact;
+    clc;   
     
     %% Конфигурация параметров
     config = struct(...
