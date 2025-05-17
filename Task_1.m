@@ -1,100 +1,116 @@
-% Task_1 - Генерация импульсов (треугольных и радиоимпульсов)
-clear all;
-close all;
-clc;
+%% Задание 1. Построение сигналов
 
-%% Параметры сигналов
-Fs = 20000;          % Увеличена частота дискретизации для более гладких графиков
-T = 1;               % Длительность сигнала (с)
-t = 0:1/Fs:T-1/Fs;   % Временная ось
-f0 = 100;            % Увеличена частота радиоимпульса для лучшей визуализации
-A = 1;               % Амплитуда импульсов
-N_pulse = 5;         % Количество импульсов в пачке
-noise_level = 0.5;   % Уровень шума увеличен для наглядности
-
-%% Создание фигуры 
-figure('Position', [100, 100, 1200, 900], 'Color', 'w');
-set(gcf, 'DefaultAxesFontSize', 10, 'DefaultAxesFontWeight', 'bold');
-
-%% 1. Одиночный треугольный видеоимпульс
-pulse_width = 0.15;  % Уменьшена длительность импульса
-tri_pulse = A * tripuls(t - 0.3, pulse_width);
-
-subplot(5, 1, 1);
-plot(t, tri_pulse, 'LineWidth', 2, 'Color', [0, 0.5, 0.8]);
-title('Одиночный треугольный видеоимпульс', 'FontSize', 12);
-xlabel('Время (с)', 'FontSize', 10);
-ylabel('Амплитуда', 'FontSize', 10);
-grid on;
-ylim([0, A*1.2]);
-set(gca, 'GridAlpha', 0.3);
-
-%% 2. Одиночный радиоимпульс (с треугольной огибающей)
-radio_pulse = tri_pulse .* sin(2*pi*f0*t);
-
-subplot(5, 1, 2);
-plot(t, radio_pulse, 'LineWidth', 1.5, 'Color', [0.8, 0.2, 0.2]);
-title('Одиночный радиоимпульс с треугольной огибающей', 'FontSize', 12);
-xlabel('Время (с)', 'FontSize', 10);
-ylabel('Амплитуда', 'FontSize', 10);
-grid on;
-ylim([-A*1.2, A*1.2]);
-set(gca, 'GridAlpha', 0.3);
-
-%% 3. Пачка треугольных видеоимпульсов
-pulse_period = 0.25;  % Уменьшен период следования импульсов
-tri_pulse_train = zeros(size(t));
-
-for k = 0:N_pulse-1
-    pulse_start = k * pulse_period;
-    tri_pulse_train = tri_pulse_train + A * tripuls(t - pulse_start - pulse_width/2, pulse_width);
+function main()
+    %% Инициализация среды
+    clear workspace;  % Очистка рабочей области
+    close all;        % Закрытие всех графиков
+    format compact;   % Компактный вывод
+    
+    %% Конфигурация параметров
+    config = struct(...
+        'sampleRate',   25000, ...       % Частота дискретизации (Гц)
+        'duration',     1.2, ...         % Длительность записи (сек)
+        'carrierFreq',  80, ...          % Несущая частота (Гц)
+        'amplitude',    0.8, ...         % Амплитуда сигнала
+        'pulseCount',   6, ...           % Число импульсов в последовательности
+        'noiseSigma',   0.4, ...         % СКО шума
+        'pulseWidth',   0.18, ...        % Ширина импульса (сек)
+        'pulseSpacing', 0.22 ...         % Интервал между импульсами (сек)
+    );
+    
+    %% Генерация временной оси
+    t = 0:1/config.sampleRate:config.duration;
+    t = t(1:end-1);  % Корректировка длины
+    
+    %% Визуализация сигналов
+    hFig = createFigure(config);
+    
+    %% 1. Одиночный треугольный импульс
+    singlePulse = generateTriangularPulse(t, 0.5, config);
+    plotSignal(hFig, 1, t, singlePulse, 'b-', 1.8, ...
+        'Одиночный треугольный импульс', 'Амплитуда');
+    
+    %% 2. Модулированный импульс
+    modulatedPulse = singlePulse .* cos(2*pi*config.carrierFreq*t);
+    plotSignal(hFig, 2, t, modulatedPulse, 'm-', 1.6, ...
+        'Радиоимпульс с треугольной огибающей', 'Амплитуда');
+    
+    %% 3. Последовательность импульсов
+    pulseTrain = generatePulseTrain(t, config);
+    plotSignal(hFig, 3, t, pulseTrain, 'g-', 1.8, ...
+        'Последовательность треугольных импульсов', 'Амплитуда');
+    
+    %% 4. Последовательность радиоимпульсов
+    rfPulseTrain = generateRfPulseTrain(t, config);
+    plotSignal(hFig, 4, t, rfPulseTrain, 'r-', 1.4, ...
+        'Последовательность радиоимпульсов', 'Амплитуда');
+    
+    %% 5. Зашумленный сигнал
+    noisySignal = addNoise(rfPulseTrain, config);
+    plotSignal(hFig, 5, t, noisySignal, 'k-', 1.2, ...
+        'Зашумленный радиоимпульс', 'Амплитуда');
+    
+    %% Добавление заголовка
+    annotation(hFig, 'textbox', [0.3 0.94 0.4 0.05], ...
+        'String', 'Моделирование импульсных сигналов', ...
+        'EdgeColor', 'none', 'FontSize', 14, ...
+        'FontWeight', 'bold', 'HorizontalAlignment', 'center');
 end
 
-subplot(5, 1, 3);
-plot(t, tri_pulse_train, 'LineWidth', 2, 'Color', [0, 0.6, 0.3]);
-title('Пачка треугольных видеоимпульсов', 'FontSize', 12);
-xlabel('Время (с)', 'FontSize', 10);
-ylabel('Амплитуда', 'FontSize', 10);
-grid on;
-ylim([0, A*1.2]);
-set(gca, 'GridAlpha', 0.3);
-
-%% 4. Пачка радиоимпульсов (с треугольной огибающей)
-radio_pulse_train = zeros(size(t));
-
-for k = 0:N_pulse-1
-    pulse_start = k * pulse_period;
-    radio_pulse_segment = A * tripuls(t - pulse_start - pulse_width/2, pulse_width) .* ...
-                         sin(2*pi*f0*(t - pulse_start));
-    radio_pulse_train = radio_pulse_train + radio_pulse_segment;
+%% Вспомогательные функции
+function fig = createFigure(config)
+    fig = figure('Name', 'Импульсные сигналы', ...
+        'Position', [150 80 1000 950], ...
+        'Color', [0.98 0.98 0.98], ...
+        'NumberTitle', 'off');
+    
+    for i = 1:5
+        subplot(5,1,i);
+        set(gca, 'FontName', 'Arial', ...
+            'GridAlpha', 0.25, ...
+            'XMinorGrid', 'on', ...
+            'YMinorGrid', 'on');
+        hold on;
+        box on;
+    end
 end
 
-subplot(5, 1, 4);
-plot(t, radio_pulse_train, 'LineWidth', 1.5, 'Color', [0.7, 0, 0.7]);
-title('Пачка радиоимпульсов с треугольной огибающей', 'FontSize', 12);
-xlabel('Время (с)', 'FontSize', 10);
-ylabel('Амплитуда', 'FontSize', 10);
-grid on;
-ylim([-A*1.2, A*1.2]);
-set(gca, 'GridAlpha', 0.3);
+function pulse = generateTriangularPulse(t, center, config)
+    pulse = config.amplitude * ...
+        tripuls(t - center, config.pulseWidth);
+end
 
-%% 5. Добавление шума к пачке радиоимпульсов
-noisy_radio_pulse_train = radio_pulse_train + noise_level * A * randn(size(t));
+function train = generatePulseTrain(t, config)
+    train = zeros(size(t));
+    for k = 0:config.pulseCount-1
+        pos = k*config.pulseSpacing + 0.15;
+        train = train + generateTriangularPulse(t, pos, config);
+    end
+end
 
-subplot(5, 1, 5);
-plot(t, noisy_radio_pulse_train, 'LineWidth', 1, 'Color', [0.3, 0.3, 0.3]);
-title(['Пачка радиоимпульсов с добавленным шумом (SNR = ' ...
-      num2str(20*log10(A/noise_level), '%.1f') ' dB)'], 'FontSize', 12);
-xlabel('Время (с)', 'FontSize', 10);
-ylabel('Амплитуда', 'FontSize', 10);
-grid on;
-ylim([-A*1.8, A*1.8]);
-set(gca, 'GridAlpha', 0.3);
+function rfTrain = generateRfPulseTrain(t, config)
+    baseTrain = generatePulseTrain(t, config);
+    carrier = cos(2*pi*config.carrierFreq*t);
+    rfTrain = baseTrain .* carrier;
+end
 
-%% Общее оформление
-sgtitle('Генерация импульсов с различными параметрами', 'FontSize', 14, 'FontWeight', 'bold');
+function noisy = addNoise(signal, config)
+    noise = config.noiseSigma * randn(size(signal));
+    noisy = signal + noise;
+end
 
-% Добавление подписи внизу
-annotation('textbox', [0.4 0.01 0.2 0.03], 'String', ...
-          'MATLAB Signal Generation Demo', 'EdgeColor', 'none', ...
-          'HorizontalAlignment', 'center', 'FontSize', 10, 'FontAngle', 'italic');
+function plotSignal(fig, pos, t, y, style, width, titleStr, ylabelStr)
+    figure(fig);
+    subplot(5,1,pos);
+    plot(t, y, style, 'LineWidth', width);
+    
+    title(titleStr, 'FontSize', 11);
+    ylabel(ylabelStr, 'FontSize', 10);
+    xlabel('Время (сек)', 'FontSize', 10);
+    grid on;
+    
+    % Автоматическое определение пределов
+    yMax = max(abs(y))*1.3;
+    if yMax == 0, yMax = 1; end
+    ylim([-yMax yMax]);
+end
